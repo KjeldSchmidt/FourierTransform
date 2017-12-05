@@ -18,6 +18,7 @@ int main() {
   ptr = fopen("sound.wav", "r");
 
   print_file_metadata( ptr );
+  print_file_sounddata( ptr );
 
   return 0;
 }
@@ -25,6 +26,7 @@ int main() {
 int print_file_metadata( FILE *file ) {
   size_t chunkSize;
   size_t subchunkTwoOffset = 20;
+  size_t dataOffset = 28;
   int read = fread(buffer, 1, 100, file);
 
   if ( read < 44 ) {
@@ -43,6 +45,7 @@ int print_file_metadata( FILE *file ) {
   printf("Subchunk 1 ID (Should be \"fmt \"): %.4s\n", buffer + 12 );
   chunkSize = (buffer[19] << 24) + (buffer[18] << 16) + (buffer[17] << 8) + (buffer[16] << 0);
   subchunkTwoOffset += chunkSize;
+  dataOffset += chunkSize;
   printf("Subchunk 1 Size (Should be >16): %lu\n", chunkSize);
   printf("AudioFormat (Should be 1): %d\n", (buffer[21] << 8) + (buffer[20]));
   channelCount = (buffer[23] << 8) + (buffer[22]);
@@ -58,6 +61,24 @@ int print_file_metadata( FILE *file ) {
   chunkSize = (buffer[subchunkTwoOffset + 7] << 24) + (buffer[subchunkTwoOffset + 6] << 16) + (buffer[subchunkTwoOffset + 5] << 8) + (buffer[subchunkTwoOffset + 4] << 0);
   printf("Subchunk 2 Size (Should be >>0): %lu\n", chunkSize);
 
+  int reset = fseek(file, dataOffset, SEEK_SET);
+  if ( reset == -1 ) {
+    error(0, 0, "Problem resetting file pointer");
+  }
+
+
+  return 0;
+}
+
+int print_file_sounddata( FILE *file ) {
+  int read = fread(buffer, 1, 100, file);
+  if ( read == 0 ) {
+    error(0, 0, "Could not read sond data");
+  }
+
+  for ( int i = 0; i < 100; i+=2 ) {
+    printf("Sample %d: %d\n", i/2, (buffer[i+1] << 8) + buffer[i] );
+  }
 
   return 0;
 }
